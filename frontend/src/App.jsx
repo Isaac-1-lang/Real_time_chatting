@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 
 
 import {Routes, Route, Navigate} from "react-router-dom";
-import Navbar from "./components/navbar";
+import Navbar from "./components/Navbar";
 import {useAuthStore} from "./store/useAuthStore"; 
 import { useThemeStore } from  "./store/useThemeStore"
 
