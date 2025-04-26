@@ -6,10 +6,15 @@ import { create } from "zustand";
 export const useChatStore = create((set, get) => ({
   messages: [],
   users: [],
+  typingUses:{},
   sendersOnHover: [],
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+
+  resetTyping:() => {
+    set({ typingUse: null})
+  },
   resetindicator: () => {
     set({ indicator: 0 });
     localStorage.setItem("indicator", "0");
@@ -35,7 +40,6 @@ export const useChatStore = create((set, get) => ({
       set({ isUsersLoading: false });
     }
   },
-
   getMessages: async (userId) => {
     set({ isMessagesLoading: true });
     try {
@@ -141,6 +145,30 @@ export const useChatStore = create((set, get) => ({
   },
 
   setSelectedUser: (selectedUser) => set({ selectedUser }),
+  startTyping: (receiverId) => {
+    const socket = useAuthStore.getState().socket;
+    if(!socket) return;
+    socket.emit("typing",{ receiverId});
+  },
+  stopTyping:(receiverId) => {
+    const socket = useAuthStore.getState().socket;
+    if(!socket) return;
+    socket.emit("stopTyping",{ receiverId});
+  },
+  subscribeToTyping: () => {
+    const socket = useAuthStore.getState().socket;
+    if (!socket) return;
+
+    socket.on("typing", (typingInfo) => {
+      const { userId, isTyping } = typingInfo;
+      set((state) => ({
+        typingUsers: {
+          ...state.typingUsers,
+          [userId]: isTyping ? true : false,  // Mark user as typing or not typing
+        },
+      }));
+    });
+  },
 }));
 
 

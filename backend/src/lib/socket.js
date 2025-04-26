@@ -34,4 +34,19 @@ io.on("connection", (socket) => {
   });
 });
 
+// Controlling the users who are typing
+
+
+socket.on("typing",({ receiverId})=> {
+  io.to(userSocketMap[receiverId]).emit("typing", {
+    senderId:userId,
+  });
+});
+
+socket.on("stopTyping",({ receiverId})=> {
+  io.to(userSocketMap[receiverId]).emit("stopTyping",{
+    senderId:userId,
+  })
+})
+
 export { io, app, server };
