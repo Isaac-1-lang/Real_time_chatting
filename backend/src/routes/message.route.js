@@ -12,3 +12,6 @@ router.post("/send/:id", protectRoute, sendMessage);
 
 // 3. Then general dynamic at last
 router.get("/:id", protectRoute, getMessages);
+
+
+export default router;
