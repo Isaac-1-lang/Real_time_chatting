@@ -19,6 +19,14 @@ const userSchema = new mongoose.Schema (
       type:String,
       default:"",
     },
+    isOnline: {
+      type:Boolean,
+      default:false,
+    },
+    lastActive: {
+      type:Date,
+      default:Date.now,
+    },
   },
   {
     timestamps:true

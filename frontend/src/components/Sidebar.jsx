@@ -5,21 +5,28 @@ import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 import { Mail } from "lucide-react";
 
 const Sidebar = () => {
-  const { 
-    getUsers, users, selectedUser, setSelectedUser, isUsersLoading, typingUsers,
-    getmessagesindicator, indicator, resetindicator 
-  } = useChatStore();
-  
+  const getUsers = useChatStore((state) => state.getUsers);
+  const users = useChatStore((state) => state.users);
+  const selectedUser = useChatStore((state) => state.selectedUser);
+  const setSelectedUser = useChatStore((state) => state.setSelectedUser);
+  const isUsersLoading = useChatStore((state) => state.isUsersLoading);
+  const typingUsers = useChatStore((state) => state.typingUsers);
+  const getmessagesindicator = useChatStore((state) => state.getmessagesindicator);
+  const indicator = useChatStore((state) => state.indicator);
+  const resetindicator = useChatStore((state) => state.resetindicator);
+
   const { onlineUsers = [], authUser } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 
   useEffect(() => {
     getUsers();
-  }, [getUsers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     getmessagesindicator();
-  }, [getmessagesindicator]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filteredUsers = showOnlineOnly
     ? users.filter((user) => onlineUsers.includes(user._id))
@@ -31,16 +38,16 @@ const Sidebar = () => {
 
   return (
     <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
-      
+
       {/* Top Section */}
       <div className="border-b border-base-300 w-full p-5">
-        
+
         {/* Profile */}
         <div className="flex items-center gap-2">
-          <img 
-            src={authUser?.profilePic || "/avatar.png"} 
-            alt="Profile" 
-            className="size-8 rounded-full object-cover" 
+          <img
+            src={authUser?.profilePic || "/avatar.png"}
+            alt="Profile"
+            className="size-8 rounded-full object-cover"
           />
           <span className="font-medium hidden lg:block">Profile</span>
         </div>
@@ -58,6 +65,7 @@ const Sidebar = () => {
           </label>
           <span className="text-xs text-zinc-500">({onlineCount} online)</span>
         </div>
+
       </div>
 
       {/* User List */}
@@ -72,10 +80,10 @@ const Sidebar = () => {
           >
             {/* Avatar */}
             <div className="relative mx-auto lg:mx-0">
-              <img 
-                src={user.profilePic || "/avatar.png"} 
-                alt={user.fullName} 
-                className="size-12 object-cover rounded-full" 
+              <img
+                src={user.profilePic || "/avatar.png"}
+                alt={user.fullName}
+                className="size-12 object-cover rounded-full"
               />
               {onlineUsers.includes(user._id) && (
                 <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-zinc-900" />
@@ -84,35 +92,40 @@ const Sidebar = () => {
 
             {/* User Info */}
             <div className="hidden lg:block text-left min-w-0">
-              
+
               {/* User Name + Typing */}
               <div className="font-medium truncate inline-flex items-center gap-3">
                 {user.fullName}
-                {typingUsers?.[user._id] && <span className="text-xs text-gray-500">typing...</span>}
+                {typingUsers?.[user._id] && (
+                  <span className="text-xs text-gray-500">typing...</span>
+                )}
               </div>
 
               {/* Mail + Indicator */}
               <div className="flex items-center gap-2 mt-1">
-                <button 
-                  className="relative btn btn-sm gap-2 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation(); // prevent selecting user when clicking mail
-                    resetindicator(user._id); // reset only for this user
-                  }}
-                >
-                  <Mail className="w-5 h-5 text-white-700" />
-                  {indicator[user._id] > 0 && (
+                {indicator?.[user._id] > 0 && (
+                  <button
+                    className="relative btn btn-sm gap-2 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (indicator[user._id] > 0) {
+                        resetindicator(user._id);
+                      }
+                    }}
+                  >
+                    <Mail className="w-5 h-5 text-white-700" />
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                       {indicator[user._id]}
                     </span>
-                  )}
-                </button>
+                  </button>
+                )}
               </div>
 
               {/* Status */}
               <div className="text-sm text-zinc-400">
-                {onlineUsers.includes(user._id) ? "Online" : "Offline"}
+                {onlineUsers.includes(user._id) ? "Offline" : "Online"}
               </div>
+
             </div>
 
           </button>

@@ -2,7 +2,6 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "./useAuthStore";
 import { axiosInstance } from "../lib/axios";
 import { create } from "zustand";
-
 export const useChatStore = create((set, get) => ({
   messages: [],
   users: [],
@@ -11,7 +10,6 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
-
   resetTyping:() => {
     set({ typingUse: null})
   },
@@ -28,7 +26,6 @@ export const useChatStore = create((set, get) => ({
     localStorage.setItem("notifications", "0");
    
   },
-
   getUsers: async () => {
     set({ isUsersLoading: true });
     try {

@@ -2,8 +2,6 @@ import bcrypt from 'bcryptjs';
 import  User  from '../models/user.model.js';
 import { generateToken } from '../lib/utils.js';
 import cloudinary from '../lib/cloudinary.js';
-
-// User signup
 export const signup = async (req, res) => {
   const { fullName, email, password, profilePic } = req.body;
   try {
@@ -14,22 +12,18 @@ export const signup = async (req, res) => {
     if (password.length < 6) {
       return res.status(400).json({ message: "The password must have at least 6 characters" });
     }
-
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
       return res.status(400).json({ message: "The user already exists" });
     }
-
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-
     const newUser = new User({
       fullName,
       email,
       password: hashedPassword,
       profilePic,
     });
-
     await newUser.save();
     generateToken(newUser._id, res);
     return res.status(201).json({
@@ -44,8 +38,6 @@ export const signup = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-// User login
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -61,7 +53,6 @@ export const login = async (req, res) => {
     } else {
       console.log("User logged in successfully");
     }
-
     generateToken(existingUser._id, res);
     return res.status(200).json({
       _id: existingUser._id,
@@ -75,8 +66,6 @@ export const login = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-// User logout
 export const logout = (req, res) => {
   try {
     res.cookie("jwt", "", { maxAge: 0 });
@@ -86,8 +75,6 @@ export const logout = (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
 export const updateProfile = async (req, res) => {
   try {
     const { profilePic } = req.body;
@@ -96,35 +83,35 @@ export const updateProfile = async (req, res) => {
     if (!profilePic) {
       return res.status(400).json({ message: "New profile image must be selected" });
     }
-
-    const userId = req.user._id; // Assuming user ID is attached to the request via a middleware (e.g., JWT)
-
-    // Upload the image to Cloudinary
+    const userId = req.user._id; 
     const uploadResponse = await cloudinary.uploader.upload(profilePic, {
-      folder: 'profile_pics', // Optional: you can specify a folder in Cloudinary
+      folder: 'profile_pics', 
     });
-
-    // Update the user's profile picture URL in the database
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { profilePic: uploadResponse.secure_url }, // Save the secure URL from Cloudinary
-      { new: true } // To return the updated document
+      { profilePic: uploadResponse.secure_url }, 
+      { new: true }
     );
-
-    // Send the updated user data as the response
     res.status(200).json(updatedUser);
 
   } catch (error) {
-    // Catch any errors and send the error response
     console.error("Error(s) in auth.controller.js:", error);
     res.status(500).json({ message: "Server error while updating profile" });
   }
 };
-
 export const checkAuth = (req,res)=> {
   try {
     res.status(200).json(req.user);
   } catch {
     console.log("Error on the page!!!!!!!!!!!!!!!!!!!!!");
   }
+}
+export const getOnlineUsers = async(req,res) => {
+  const onlineUsers = await User.find({ isOnline:true});
+  res.json(onlineUsers.map(user => ({
+    _id: user._id,
+    fullName: user.fullName,
+    profilePic: user.profilePic,
+  })));
+  console.log("Online users:", onlineUsers);
 }

@@ -1,8 +1,5 @@
 import express from 'express';
-
 import mongoose from 'mongoose';
-
-
 const connectDB = async () => {
   try {
     const connection = await mongoose.connect(process.env.MONGO_URI);
@@ -11,5 +8,4 @@ const connectDB = async () => {
      console.error("Failed to connect to the database");
   }
 }
-
 export default connectDB;
