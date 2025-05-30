@@ -9,3 +9,6 @@ createRoot(document.getElementById('root')).render(
     <App />
   </BrowserRouter>,
 )
+
+
+// Never use strict Mode in this one if routing is needed

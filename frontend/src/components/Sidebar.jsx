@@ -15,8 +15,24 @@ const Sidebar = () => {
   const indicator = useChatStore((state) => state.indicator);
   const resetindicator = useChatStore((state) => state.resetindicator);
 
-  const { onlineUsers = [], authUser } = useAuthStore();
+  const { onlineUsers = [], authUser, socket } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
+  const [localOnlineUsers, setLocalOnlineUsers] = useState(new Set());
+
+  // Debug socket connection
+  useEffect(() => {
+    if (socket) {
+      console.log("Socket connection status:", socket.connected);
+      console.log("Socket ID:", socket.id);
+    }
+  }, [socket]);
+
+  // Debug users and online users
+  useEffect(() => {
+    console.log("All users:", users);
+    console.log("Online users from store:", onlineUsers);
+    console.log("Local online users:", Array.from(localOnlineUsers));
+  }, [users, onlineUsers, localOnlineUsers]);
 
   useEffect(() => {
     getUsers();
@@ -28,11 +44,24 @@ const Sidebar = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Update local online users state when onlineUsers changes
+  useEffect(() => {
+    if (Array.isArray(onlineUsers)) {
+      console.log("Updating local online users with:", onlineUsers);
+      const newOnlineUsers = new Set(onlineUsers);
+      // Remove current user from online users if present
+      if (authUser?._id) {
+        newOnlineUsers.delete(authUser._id);
+      }
+      setLocalOnlineUsers(newOnlineUsers);
+    }
+  }, [onlineUsers, authUser]);
+
   const filteredUsers = showOnlineOnly
-    ? users.filter((user) => onlineUsers.includes(user._id))
+    ? users.filter((user) => localOnlineUsers.has(user._id))
     : users;
 
-  const onlineCount = Math.max(0, onlineUsers.length - 1);
+  const onlineCount = localOnlineUsers.size;
 
   if (isUsersLoading) return <SidebarSkeleton />;
 
@@ -70,66 +99,69 @@ const Sidebar = () => {
 
       {/* User List */}
       <div className="overflow-y-auto w-full py-3">
-        {filteredUsers.map((user) => (
-          <button
-            key={user._id}
-            onClick={() => setSelectedUser(user)}
-            className={`w-full p-3 flex items-center gap-3 hover:bg-base-300 transition-colors ${
-              selectedUser?._id === user._id ? "bg-base-300 ring-1 ring-base-300" : ""
-            }`}
-          >
-            {/* Avatar */}
-            <div className="relative mx-auto lg:mx-0">
-              <img
-                src={user.profilePic || "/avatar.png"}
-                alt={user.fullName}
-                className="size-12 object-cover rounded-full"
-              />
-              {onlineUsers.includes(user._id) && (
-                <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-zinc-900" />
-              )}
-            </div>
-
-            {/* User Info */}
-            <div className="hidden lg:block text-left min-w-0">
-
-              {/* User Name + Typing */}
-              <div className="font-medium truncate inline-flex items-center gap-3">
-                {user.fullName}
-                {typingUsers?.[user._id] && (
-                  <span className="text-xs text-gray-500">typing...</span>
+        {filteredUsers.map((user) => {
+          const isOnline = localOnlineUsers.has(user._id);
+          console.log(`User ${user.fullName} online status:`, isOnline);
+          
+          return (
+            <button
+              key={user._id}
+              onClick={() => setSelectedUser(user)}
+              className={`w-full p-3 flex items-center gap-3 hover:bg-base-300 transition-colors ${
+                selectedUser?._id === user._id ? "bg-base-300 ring-1 ring-base-300" : ""
+              }`}
+            >
+              {/* Avatar */}
+              <div className="relative mx-auto lg:mx-0">
+                <img
+                  src={user.profilePic || "/avatar.png"}
+                  alt={user.fullName}
+                  className="size-12 object-cover rounded-full"
+                />
+                {isOnline && (
+                  <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-zinc-900" />
                 )}
               </div>
 
-              {/* Mail + Indicator */}
-              <div className="flex items-center gap-2 mt-1">
-                {indicator?.[user._id] > 0 && (
-                  <button
-                    className="relative btn btn-sm gap-2 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (indicator[user._id] > 0) {
+              {/* User Info */}
+              <div className="hidden lg:block text-left min-w-0">
+
+                {/* User Name + Typing */}
+                <div className="font-medium truncate inline-flex items-center gap-3">
+                  {user.fullName}
+                  {typingUsers?.[user._id] && (
+                    <span className="text-xs text-gray-500">typing...</span>
+                  )}
+                </div>
+
+                {/* Mail + Indicator */}
+                <div className="flex items-center gap-2 mt-1">
+                  {indicator?.[user._id] > 0 && (
+                    <button
+                      className="relative btn btn-sm gap-2 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
                         resetindicator(user._id);
-                      }
-                    }}
-                  >
-                    <Mail className="w-5 h-5 text-white-700" />
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {indicator[user._id]}
-                    </span>
-                  </button>
-                )}
+                      }}
+                    >
+                      <Mail className="w-5 h-5 text-white-700" />
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {indicator[user._id]}
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Status */}
+                <div className="text-sm text-zinc-400">
+                  {isOnline ? "Online" : "Offline"}
+                </div>
+
               </div>
 
-              {/* Status */}
-              <div className="text-sm text-zinc-400">
-                {onlineUsers.includes(user._id) ? "Offline" : "Online"}
-              </div>
-
-            </div>
-
-          </button>
-        ))}
+            </button>
+          );
+        })}
 
         {/* Empty State */}
         {filteredUsers.length === 0 && (

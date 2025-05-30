@@ -5,17 +5,19 @@ import { create } from "zustand";
 export const useChatStore = create((set, get) => ({
   messages: [],
   users: [],
-  typingUses:{},
   sendersOnHover: [],
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
   resetTyping:() => {
-    set({ typingUse: null})
+    set({ typingUsers: null})
   },
-  resetindicator: () => {
-    set({ indicator: 0 });
-    localStorage.setItem("indicator", "0");
+  resetindicator: (userId) => {
+    set((state) => {
+      const updated = { ...state.indicator, [userId]: 0 };
+      localStorage.setItem("indicator", JSON.stringify(updated));
+      return { indicator: updated };
+    });
   },
   Notifications: parseInt(localStorage.getItem("notifications") || "0"),
   indicator: parseInt(localStorage.getItem("indicator") || "0"),
