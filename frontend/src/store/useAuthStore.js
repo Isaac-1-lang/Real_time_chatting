@@ -63,7 +63,9 @@ export const useAuthStore = create((set,get) => ({
       toast.success("Logged in successfully");
       get().connectSocket();
     } catch (error) {
-      toast.error(error.response.data.message);
+      const errorMessage = error.response?.data?.message || "Failed to login. Please try again.";
+      toast.error(errorMessage);
+      console.error("Login error:", error);
     } finally {
       set({ isLoggingIn: false });
     }
@@ -118,45 +120,48 @@ connectSocket: () => {
   // Remove any existing listeners before adding new ones
   socket.removeAllListeners();
 
-  socket.on("connect", () => {
-    console.log("Socket connected successfully with ID:", socket.id);
-    // Request initial online users list
-    socket.emit("getOnlineUsers");
-  });
+  // Set up event listeners
+  const setupListeners = () => {
+    socket.on("connect", () => {
+      console.log("Socket connected successfully with ID:", socket.id);
+      socket.emit("getOnlineUsers");
+    });
 
-  socket.on("connect_error", (error) => {
-    console.error("Socket connection error:", error);
-  });
+    socket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+    });
 
-  socket.on("getOnlineUsers", (userIds) => {
-    console.log("Received online users from server:", userIds);
-    if (Array.isArray(userIds)) {
-      // Ensure we're not including the current user in the online users list
-      const filteredUsers = userIds.filter(id => id !== authUser._id);
-      console.log("Filtered online users:", filteredUsers);
-      set({ onlineUsers: filteredUsers });
-    } else {
-      console.error("Received invalid online users data:", userIds);
-    }
-  });
+    socket.on("getOnlineUsers", (userIds) => {
+      console.log("Received online users from server:", userIds);
+      if (Array.isArray(userIds)) {
+        const filteredUsers = userIds.filter(id => id !== authUser._id);
+        console.log("Filtered online users:", filteredUsers);
+        set({ onlineUsers: filteredUsers });
+      } else {
+        console.error("Received invalid online users data:", userIds);
+      }
+    });
 
-  socket.on("error", (error) => {
-    console.error("Socket error:", error);
-  });
+    socket.on("error", (error) => {
+      console.error("Socket error:", error);
+    });
 
-  // Handle reconnection
-  socket.on("reconnect", (attemptNumber) => {
-    console.log("Socket reconnected after", attemptNumber, "attempts");
-    socket.emit("getOnlineUsers");
-  });
+    socket.on("reconnect", (attemptNumber) => {
+      console.log("Socket reconnected after", attemptNumber, "attempts");
+      socket.emit("getOnlineUsers");
+    });
 
-  // Handle disconnection
-  socket.on("disconnect", (reason) => {
-    console.log("Socket disconnected:", reason);
-    set({ onlineUsers: [] });
-  });
+    socket.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", reason);
+      set({ onlineUsers: [] });
+    });
+  };
 
-  set({ socket: socket });
+  // Set up listeners
+  setupListeners();
+
+  // Store the socket instance
+  set({ socket });
 },
 disconnectSocket: () => {
   const socket = get().socket;

@@ -65,6 +65,9 @@ export const useChatStore = create((set, get) => ({
     const socket = useAuthStore.getState().socket;
     if (!socket) return;
 
+    // Remove any existing message listeners
+    socket.off("newMessage");
+
     socket.on("newMessage", (newMessage) => {
       const { selectedUser } = get();
       if (selectedUser && newMessage.senderId === selectedUser._id) {
@@ -73,9 +76,7 @@ export const useChatStore = create((set, get) => ({
         set((state) => {
           const newUserNotifications = { ...state.userNotifications };
           newUserNotifications[newMessage.senderId] = (newUserNotifications[newMessage.senderId] || 0) + 1;
-
           localStorage.setItem("userNotifications", JSON.stringify(newUserNotifications));
-
           return { userNotifications: newUserNotifications };
         });
       }
@@ -85,6 +86,9 @@ export const useChatStore = create((set, get) => ({
   getNotifications: () => {
     const socket = useAuthStore.getState().socket;
     if (!socket) return;
+
+    // Remove any existing notification listeners
+    socket.off("newMessage");
 
     socket.on("newMessage", (newMessage) => {
       const { selectedUser } = get();
