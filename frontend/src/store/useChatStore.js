@@ -2,6 +2,7 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "./useAuthStore";
 import { axiosInstance } from "../lib/axios";
 import { create } from "zustand";
+
 export const useChatStore = create((set, get) => ({
   messages: [],
   users: [],
@@ -9,8 +10,9 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
-  resetTyping:() => {
-    set({ typingUsers: null})
+  typingUsers: {},
+  resetTyping: () => {
+    set({ typingUsers: {} });
   },
   resetindicator: (userId) => {
     set((state) => {
@@ -158,18 +160,46 @@ export const useChatStore = create((set, get) => ({
     if(!socket) return;
     socket.emit("stopTyping",{ receiverId});
   },
+  setTypingStatus: (userId, isTyping) => {
+    const socket = useAuthStore.getState().socket;
+    if (!socket) {
+      console.log("Socket not available");
+      return;
+    }
+
+    console.log("Emitting typing status:", { to: userId, isTyping });
+    socket.emit("typing", {
+      to: userId,
+      isTyping
+    });
+
+    // Update local state immediately for better UX
+    set((state) => ({
+      typingUsers: {
+        ...state.typingUsers,
+        [userId]: isTyping
+      }
+    }));
+  },
   subscribeToTyping: () => {
     const socket = useAuthStore.getState().socket;
-    if (!socket) return;
+    if (!socket) {
+      console.log("Socket not available for typing subscription");
+      return;
+    }
 
-    socket.on("typing", (typingInfo) => {
-      const { userId, isTyping } = typingInfo;
-      set((state) => ({
-        typingUsers: {
+    console.log("Subscribing to typing events");
+    socket.off("typing");
+    socket.on("typing", ({ from, isTyping }) => {
+      console.log("Received typing event:", { from, isTyping });
+      set((state) => {
+        const newTypingUsers = {
           ...state.typingUsers,
-          [userId]: isTyping ? true : false,  // Mark user as typing or not typing
-        },
-      }));
+          [from]: isTyping
+        };
+        console.log("Updated typingUsers:", newTypingUsers);
+        return { typingUsers: newTypingUsers };
+      });
     });
   },
 }));

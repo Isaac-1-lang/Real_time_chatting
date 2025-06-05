@@ -1,5 +1,3 @@
-
-
 import { useChatStore } from "../store/useChatStore";
 import { useEffect, useRef } from "react";
 
@@ -17,21 +15,29 @@ const ChatContainer = () => {
     selectedUser,
     subscribeToMessages,
     unsubscribeFromMessages,
+    typingUsers,
+    subscribeToTyping,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
 
+  // Debug log for typingUsers
+  useEffect(() => {
+    console.log("Current typingUsers state:", typingUsers);
+  }, [typingUsers]);
 
   useEffect(() => {
+    if (!selectedUser?._id) return;
+
+    console.log("Setting up chat with user:", selectedUser._id);
     getMessages(selectedUser._id);
-
     subscribeToMessages();
+    subscribeToTyping();
 
-
-    
-
-    return () => unsubscribeFromMessages();
-  }, [selectedUser._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);
+    return () => {
+      unsubscribeFromMessages();
+    };
+  }, [selectedUser?._id, getMessages, subscribeToMessages, unsubscribeFromMessages, subscribeToTyping]);
 
   useEffect(() => {
     if (messageEndRef.current && messages) {
@@ -60,7 +66,7 @@ const ChatContainer = () => {
             className={`chat ${message.senderId === authUser._id ? "chat-end" : "chat-start"}`}
             ref={messageEndRef}
           >
-            <div className=" chat-image avatar">
+            <div className="chat-image avatar">
               <div className="size-10 rounded-full border">
                 <img
                   src={
@@ -89,6 +95,30 @@ const ChatContainer = () => {
             </div>
           </div>
         ))}
+        
+        {/* Typing Indicator */}
+        {typingUsers[selectedUser?._id] && (
+          <div className="chat chat-start">
+            <div className="chat-image avatar">
+              <div className="size-10 rounded-full border">
+                <img
+                  src={selectedUser.profilePic || "/avatar.png"}
+                  alt="profile pic"
+                />
+              </div>
+            </div>
+            <div className="chat-bubble bg-base-200">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-base-content/70">typing</span>
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 rounded-full bg-base-content/70 animate-bounce" />
+                  <span className="w-2 h-2 rounded-full bg-base-content/70 animate-bounce [animation-delay:0.2s]" />
+                  <span className="w-2 h-2 rounded-full bg-base-content/70 animate-bounce [animation-delay:0.4s]" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <MessageInput />

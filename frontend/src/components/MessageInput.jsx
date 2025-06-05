@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { Image, Send, X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -7,7 +7,48 @@ const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
-  const { sendMessage } = useChatStore();
+  const { sendMessage, selectedUser, setTypingStatus } = useChatStore();
+  const typingTimeoutRef = useRef(null);
+
+  // Handle typing status
+  const handleTyping = (e) => {
+    setText(e.target.value);
+    
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Emit typing status
+    if (selectedUser?._id) {
+      console.log("User is typing, selectedUser:", selectedUser);
+      setTypingStatus(selectedUser._id, true);
+    }
+
+    // Set timeout to stop typing status
+    typingTimeoutRef.current = setTimeout(() => {
+      console.log("Stopping typing status");
+      if (selectedUser?._id) {
+        setTypingStatus(selectedUser._id, false);
+      }
+    }, 2000);
+  };
+
+  // Cleanup typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Reset typing status when selected user changes
+  useEffect(() => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+  }, [selectedUser?._id]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -38,9 +79,12 @@ const MessageInput = () => {
         image: imagePreview,
       });
 
-      // Clear form
+      // Clear form and typing status
       setText("");
       setImagePreview(null);
+      if (selectedUser?._id) {
+        setTypingStatus(selectedUser._id, false);
+      }
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -76,7 +120,7 @@ const MessageInput = () => {
             className="w-full input input-bordered rounded-lg input-sm sm:input-md"
             placeholder="Type a message..."
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={handleTyping}
           />
           <input
             type="file"
@@ -106,4 +150,5 @@ const MessageInput = () => {
     </div>
   );
 };
+
 export default MessageInput;

@@ -87,17 +87,14 @@ io.on("connection", (socket) => {
     socket.emit("getOnlineUsers", onlineUsers);
   });
 
-  socket.on("typing", ({ receiverId }) => {
-    const receiverSocketId = userSocketMap.get(receiverId);
+  socket.on("typing", ({ to, isTyping }) => {
+    console.log("Typing event received:", { to, isTyping, from: userId });
+    const receiverSocketId = userSocketMap.get(to);
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("typing", { senderId: userId });
-    }
-  });
-
-  socket.on("stopTyping", ({ receiverId }) => {
-    const receiverSocketId = userSocketMap.get(receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("stopTyping", { senderId: userId });
+      io.to(receiverSocketId).emit("typing", { 
+        from: userId,
+        isTyping 
+      });
     }
   });
 
