@@ -6,7 +6,7 @@ export const signup = async (req, res) => {
   const { fullName, email, password, profilePic } = req.body;
   try {
     if (!fullName || !email || !password) {
-      return res.status(400).json({ message: "All fields must be filled" });
+      return res.status(400).json({ message: "All fields must be filled by the users" });
     }
 
     if (password.length < 6) {
